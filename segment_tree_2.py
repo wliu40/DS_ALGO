@@ -122,4 +122,5 @@ for i in range(len(arr)):
 
 level_order_traversal(tree)
 print query_range_sum(tree, 1,3)
-#print query_range_sum(tree, 2,3)
+print query_range_sum(tree, 2,3)
+#%%
