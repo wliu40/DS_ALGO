@@ -1,0 +1,2281 @@
+********************** 1. Two Sum ***************************
+Given an array of integers, return indices of the two numbers such that they add up to a specific target.
+
+You may assume that each input would have exactly one solution, and you may not use the same element twice.
+
+Example:
+Given nums = [2, 7, 11, 15], target = 9,
+
+Because nums[0] + nums[1] = 2 + 7 = 9,
+return [0, 1].
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        unordered_map <int, int> map;
+        vector<int> ans;
+        for (int i = 0; i < nums.size(); i++){
+            int num_to_find = target - nums[i];
+            if (map.find( num_to_find ) != map.end()){
+                ans.push_back(map[num_to_find]);
+                ans.push_back(i);
+                break;
+            }
+            map[nums[i]] = i;
+        }
+        return ans;
+    }
+};
+class Solution(object):
+    def twoSum(self, nums, target):
+        dic = {}
+        for i in range(len(nums)):
+            if target - nums[i] in dic:
+                return [dic[target-nums[i]], i]
+            else:
+                dic[nums[i]] = i
+
+***********************4. Median of Two Sorted Arrays*******************************
+There are two sorted arrays nums1 and nums2 of size m and n respectively.
+
+Find the median of the two sorted arrays. The overall run time complexity should be O(log (m+n)).
+
+Example 1:
+nums1 = [1, 3]
+nums2 = [2]
+
+The median is 2.0
+Example 2:
+nums1 = [1, 2]
+nums2 = [3, 4]
+
+The median is (2 + 3)/2 = 2.5
+class Solution {
+public:
+    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
+        //思路：
+        //对于一个长度为x的已排序数组arr，其median元素是(arr[(x-1)/2]+arr[x/2])/2
+        //比如arr = [1,2,3,5,6]， x = 5, median = (arr[4/2] + arr[5/2])/2 = arr[2] = 3
+        //比如arr= [1,2,3,4], x = 4, median = (arr[1] + arr[2])/2 = (2+3)/2 = 2.5
+        //假设两个数组的长度分别是m和n， 
+        
+        //      left_part          |        right_part
+        
+        //A[0], A[1], ..., A[i-1]  |  A[i], A[i+1], ..., A[m-1] 
+        //                       分界1
+        //B[0], B[1], ..., B[j-1]  |  B[j], B[j+1], ..., B[n-1] 
+        //                       分界2
+
+        //median的满足两个条件：1) A[i-1] < B[j] && B[j-1] < A[i];
+        //                      2) 左边总长度 == 右边的总长度
+        // 假定我们初始化分界1，分界2，那么为了保证左右长度相等：
+        // 假设分界2恰在中间，则分界1也一定在中间
+        // 假设分界2向右（左）移动，则分界1会向左（右）移动
+        //[1, 3, 5, 7, 8, 9]
+        //[0, 2]
+        //假设nums1长度总是比nums2要长
+        //假设分界2落在了y的位置上，则分界1落在什么位置？
+        //根据左边总长度 == 右边的总长度的原则， 现在左右分别有y和n-y个元素, 则得到:(m+n)/2-y
+        //
+        int N1 = nums1.size();
+        int N2 = nums2.size();
+        if (N1 < N2) return findMedianSortedArrays(nums2, nums1);	// Make sure A2 is the shorter one.
+        
+        if (N2 == 0) return ((double)nums1[(N1-1)/2] + (double)nums1[N1/2])/2;  // If A2 is empty
+        
+        int lo = 0, hi = N2 * 2;
+        while (lo <= hi) {
+            int mid2 = (lo + hi) / 2;   // Try Cut 2 
+            int mid1 = N1 + N2 - mid2;  // Calculate Cut 1 accordingly
+            
+            double L1 = (mid1 == 0) ? INT_MIN : nums1[(mid1-1)/2];	// Get L1, R1, L2, R2 respectively
+            double L2 = (mid2 == 0) ? INT_MIN : nums2[(mid2-1)/2];
+            double R1 = (mid1 == N1 * 2) ? INT_MAX : nums1[(mid1)/2];
+            double R2 = (mid2 == N2 * 2) ? INT_MAX : nums2[(mid2)/2];
+            
+            if (L1 > R2) lo = mid2 + 1;		// A1's lower half is too big; need to move C1 left (C2 right)
+            else if (L2 > R1) hi = mid2 - 1;	// A2's lower half too big; need to move C2 left.
+            else return (max(L1,L2) + min(R1, R2)) / 2;	// Otherwise, that's the right cut.
+        }
+        return -1;
+    }
+};
+*************************11. Container With Most Water*******************************
+Given n non-negative integers a1, a2, ..., an, where each represents a point at coordinate (i, ai). 
+n vertical lines are drawn such that the two endpoints of line i is at (i, ai) and (i, 0). 
+Find two lines, which together with x-axis forms a container, such that the container contains the most water.
+
+Note: You may not slant the container and n is at least 2.
+class Solution {
+public:
+    int maxArea(vector<int>& height) 
+    {
+        int maxCapacity = 0;
+        int capacity = 0;
+        //维护两个pointer i和j， i指向第一个元素，j指向最后一个元素, i逐渐增加，j逐渐减小
+        //Basic idea: 
+        //假设height[i] < height[j], 那么i和j组成的容器的容量肯定大于i和j-1组成的容器容量,这种情况下需要i++来寻找是否有更大容器.
+        //同理假设height[i] > height[j], 那么i和j组成的容器的容量肯定大于i+1和j的容器容量,这种情况下需要j++.
+        int i = 0;
+        int j = height.size() - 1;
+        //哪个边长小，增加那一边的index
+        while(i < j)
+        {
+            if (height[i] < height[j])// height[i] < height[j], 计算容量，并i++, 
+            {
+                capacity = height[i] * (j-i);
+                i++;
+            }
+            else// height[i] >= height[j], 计算容量，并j--, 
+            {
+                capacity = height[j] * (j-i);
+                j--;
+            }
+            if (capacity > maxCapacity)//维护一个最大容器
+                maxCapacity = capacity;
+        }
+        
+        return maxCapacity;
+    }
+};
+**************************15. 3Sum*****************************
+Given an array S of n integers, are there elements a, b, c in S such that a + b + c = 0? 
+Find all unique triplets in the array which gives the sum of zero.
+Note: The solution set must not contain duplicate triplets.
+For example, given array S = [-1, 0, 1, 2, -1, -4],
+
+A solution set is:
+[
+  [-1, 0, 1],
+  [-1, -1, 2]
+]
+class Solution {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        vector<vector<int>> ans;
+        sort(nums.begin(), nums.end()); //sort the vector
+        for(int i = 0; i < nums.size(); i++){
+            if(nums[i] > 0)
+                break;
+            if( i > 0 && nums[i] == nums[i-1] ) //skip the same value
+                continue;
+            // set two pointer from the next of ith, to the end of the vector
+            int j = i + 1; 
+            int k = nums.size()-1;
+            int target = -nums[i];
+            while (j < k){
+                int sum = nums[j] + nums[k];
+                if (sum == target){
+                    ans.push_back(vector<int>{nums[i], nums[j], nums[k]});
+                    //update j and k at the same time
+                    j++;
+                    k--;
+                    while(j < k && nums[k] == nums[k+1])  k--;//if the current nums[k] == the previous one, pass it
+                    while(j < k && nums[j] == nums[j-1]) j++;
+                }
+                else{
+                    if(sum > target) k--;
+                    else j++;
+                }
+            }
+        }
+        return ans;
+    }
+};
+*************************16. 3Sum Closest******************************
+Given an array S of n integers, find three integers in S such that the sum is closest to a given number, target. 
+Return the sum of the three integers. You may assume that each input would have exactly one solution.
+
+    For example, given array S = {-1 2 1 -4}, and target = 1.
+
+    The sum that is closest to the target is 2. (-1 + 2 + 1 = 2).
+	class Solution {
+public:
+    int threeSumClosest(vector<int>& nums, int target) {
+        int dist = INT_MAX;
+        int res = 0;
+        
+        //先排序
+        sort(nums.begin(), nums.end());
+        for(int i = 0; i < nums.size(); i++){
+            //如果之前已经用过了nums[i]，我们将不会重复使用nums[i]
+            if(i > 0 && nums[i] == nums[i-1])
+                continue;
+            //每次重新初始化j和k
+            int j = i + 1;
+            int k = nums.size() - 1;
+            while(j < k){
+                int tmp = nums[j] + nums[k] + nums[i] - target;//计算最新的距离
+                if(tmp == 0)//如果距离为0，直接跳出返回target
+                    return target;
+                    
+                if(abs(tmp) < abs(dist)){//如果有更近的距离则刷新dist和res
+                    res = nums[j] + nums[k] + nums[i];
+                    dist = abs(tmp);
+                }
+                //如果tmp大于零，说明我们需要减小nums[i]+nums[j]+nums[k], 即减小k
+                if (tmp > 0){
+                    k--;
+                    while(j < k && nums[k+1] == nums[k]) k--;//跳过去重复元素
+                }
+                else{//反之，增大j
+                    j++;
+                    while(j < k && nums[j] == nums[j-1]) j++;//跳过去重复元素
+                }
+            }
+        }
+        return res;
+    }
+};
+*************************18. 4Sum******************************
+Given an array S of n integers, are there elements a, b, c, and d in S such that a + b + c + d = target? 
+Find all unique quadruplets in the array which gives the sum of target.
+Note: The solution set must not contain duplicate quadruplets.
+For example, given array S = [1, 0, -1, 0, -2, 2], and target = 0.
+
+A solution set is:
+[
+  [-1,  0, 0, 1],
+  [-2, -1, 1, 2],
+  [-2,  0, 0, 2]
+]
+class Solution {
+public:
+    vector<vector<int>> fourSum(vector<int>& nums, int target) {
+        sort(nums.begin(), nums.end());
+        vector<vector<int>> res;
+        vector<int> solu;
+
+        for(int i = 0; i < nums.size(); i++){
+            if(i>0 && nums[i-1] == nums[i]){
+                
+                continue;
+            }
+            int new_target = target-nums[i];
+            for(int j = i+1; j < nums.size(); j++){
+                if(j>i+1 &&  ( nums[j-1] == nums[j]) ){
+                    continue;
+                }
+                int k = j + 1;
+                int m = nums.size() -1;
+                int new_new_target = new_target - nums[j];
+                while(k < m){
+                    if(nums[k] + nums[m] == new_new_target){
+                        res.push_back(vector<int>{nums[i], nums[j], nums[k], nums[m]});
+                        k++;
+                        m--;
+                        while(k<m && nums[k-1] == nums[k]) k++;
+                        while(k<m && nums[m+1] == nums[m]) m--;
+                    }
+                    else{
+                        if(nums[k] + nums[m] > new_new_target)
+                            m--;
+                        else
+                            k++;
+                    }
+                }
+            }
+        }
+        return res;
+    }
+};
+************************26. Remove Duplicates from Sorted Array*******************************
+Given a sorted array, remove the duplicates in place such that each element appear only once and return the new length.
+
+Do not allocate extra space for another array, you must do this in place with constant memory.
+
+For example,
+Given input array nums = [1,1,2],
+
+Your function should return length = 2, with the first two elements of nums being 1 and 2 respectively. 
+It doesn't matter what you leave beyond the new length.
+class Solution {
+public:
+    int removeDuplicates(vector<int>& nums) 
+    {
+        
+    	if (nums.size() <= 1)
+    		return nums.size();
+    	int k = 1;
+    	//1122234
+    	//1122234
+    	//1222234
+    	//...
+    	//1234234
+    	for (int i = 1; i < nums.size(); i++){
+            if (nums[i] != nums[i-1])
+    			nums[k++] = nums[i];
+    	}
+    	return k;
+    }
+};
+*************************27. Remove Element******************************
+Given an array and a value, remove all instances of that value in place and return the new length.
+
+Do not allocate extra space for another array, you must do this in place with constant memory.
+
+The order of elements can be changed. It doesn't matter what you leave beyond the new length.
+
+Example:
+Given input array nums = [3,2,2,3], val = 3
+
+Your function should return length = 2, with the first two elements of nums being 2.
+class Solution {
+public:
+    int removeElement(vector<int>& nums, int val) {
+        int pre = 0;
+        int cur = 0;
+        while (1){
+            while(cur < nums.size() && nums[cur] == val){
+                cur++;
+            }
+            if (cur == nums.size())
+                break;
+            if (nums[cur] != val){
+                nums[pre] = nums[cur];
+                pre++;
+                cur++;
+            }
+        }
+        return pre;
+    }
+};
+**************************31. Next Permutation*****************************
+Implement next permutation, which rearranges numbers into the lexicographically next greater permutation of numbers.
+
+If such arrangement is not possible, it must rearrange it as the lowest possible order (ie, sorted in ascending order).
+
+The replacement must be in-place, do not allocate extra memory.
+
+Here are some examples. Inputs are in the left-hand column and its corresponding outputs are in the right-hand column.
+1,2,3 → 1,3,2
+3,2,1 → 1,2,3
+1,1,5 → 1,5,1
+class Solution {
+public:    
+    void nextPermutation(vector<int>& nums) {
+        //处理只有一个元素的特例
+        if(nums.size() == 1)
+            return;
+
+        int i = nums.size()-1;
+        
+        //从后往前，找到一个范围，元素一直递增的范围
+        //4 5 3 2 1 =>找到5 3 2 1是递减的，倒着看，1 2 3 5是递增的
+        while(nums[i-1] >= nums[i]){
+            i--;
+            if (i == 0)
+                break;
+        }
+        //now, i = 1
+        //如果i==0，说明当下的permutation已经是最大值，下一个permutation应该是最小值
+        //使用reverse，将整个vector reverse即可
+        // e.g., 5 4 3 2 1 => 1 2 3 4 5
+        if (i == 0)
+        {
+            reverse(nums.begin(), nums.end());
+            return;
+        }
+        //否则，reverse该递增范围(从后往前看)
+        // 4 5 3 2 1 =>4 1 2 3 5
+        else
+        {
+            reverse(nums.begin()+i, nums.end());
+            //for_each(nums.begin(), nums.end(),[](int val){cout<<val <<",";});
+            //在该范围内，找到第一个大于nums[i-1]的元素并交换之
+            // 4 5 3 2 1 =>4 1 2 3 5 => 5 1 2 3 4
+            for (int j = i; j < nums.size(); j++)
+            {
+                if (nums[j] > nums[i-1]){
+                    swap(nums[i-1], nums[j]);
+                    return;
+                }
+            }
+        }
+    }
+};
+***************************33. Search in Rotated Sorted Array****************************
+Suppose an array sorted in ascending order is rotated at some pivot unknown to you beforehand.
+
+(i.e., 0 1 2 4 5 6 7 might become 4 5 6 7 0 1 2).
+
+You are given a target value to search. If found in the array return its index, otherwise return -1.
+
+You may assume no duplicate exists in the array.
+class Solution {
+public:
+    int search(vector<int>& nums, int target) {
+        //空集返回-1
+        if (nums.empty()) return -1;
+        
+        
+        int l = 0, r = nums.size()-1;
+        //如果是没有旋转的，有序的，则直接开始搜
+        if(nums[l] < nums[r])
+            return biSearch(nums, l, r, target);
+        //否则找到分界点， [4 5 6 7 0 1 2] 的分界点为7,1; 
+        //找到7, 1的index， 给l, r
+        while(l < r){
+            if(l+1 == r) break;
+            int mid = l + (r-l)/2;
+            if (nums[mid] > nums[r] )
+                l = mid; 
+            else
+                r = mid;
+        }
+        //cout << l << " " << r << endl;
+        if(target < nums[0])
+            return biSearch(nums, r, nums.size()-1, target); //search in r-end
+        else
+            return biSearch(nums, 0, l, target);//search in 0- l
+    }
+private:
+    //标准binary search
+    int biSearch(vector<int> &nums, int l, int r, int target){
+        while(l <= r){
+            int mid = l + (r-l)/2;
+        
+            if(target == nums[mid]) return mid;
+            if (target < nums[mid]){
+                r = mid-1;
+            }
+            else
+                l = mid+1;
+        }
+        return -1;
+    }
+};
+*************************34. Search for a Range******************************
+Given an array of integers sorted in ascending order, find the starting and ending position of a given target value.
+
+Your algorithm's runtime complexity must be in the order of O(log n).
+
+If the target is not found in the array, return [-1, -1].
+
+For example,
+Given [5, 7, 7, 8, 8, 10] and target value 8,
+return [3, 4].
+
+class Solution {
+public:
+    vector<int> searchRange(vector<int>& nums, int target) {
+    auto bounds = equal_range(nums.begin(), nums.end(), target);
+    if (bounds.first == bounds.second)
+        return {-1, -1};
+    return {bounds.first - nums.begin(), bounds.second - nums.begin() - 1};
+    }
+};
+***********************35. Search Insert Position********************************
+Given a sorted array and a target value, return the index if the target is found. 
+If not, return the index where it would be if it were inserted in order.
+
+You may assume no duplicates in the array.
+Here are few examples.
+[1,3,5,6], 5 → 2
+[1,3,5,6], 2 → 1
+[1,3,5,6], 7 → 4
+[1,3,5,6], 0 → 0
+class Solution {
+public:
+    int searchInsert(vector<int>& nums, int target) {
+       int left = 0, right = nums.size()-1, mid;
+        while (1){
+            mid= left+(right-left)/2;
+            if(left > right ||nums[mid] == target ) 
+                break;
+            if (nums[mid] < target){
+                left = mid+1;
+            }
+            else{
+                right = mid-1;
+            }
+        }
+        return mid;
+    }
+};
+************************39. Combination Sum*******************************
+Given a set of candidate numbers (C) (without duplicates) and a target number (T), 
+find all unique combinations in C where the candidate numbers sums to T.
+
+The same repeated number may be chosen from C unlimited number of times.
+
+Note:
+All numbers (including target) will be positive integers.
+The solution set must not contain duplicate combinations.
+For example, given candidate set [2, 3, 6, 7] and target 7, 
+A solution set is: 
+[
+  [7],
+  [2, 2, 3]
+]
+class Solution {
+public:
+    vector<vector<int> > combinationSum(vector<int> &candidates, int target) {
+        sort(candidates.begin(), candidates.end());
+        vector<vector<int> > res;
+        vector<int> combination;
+        combinationSum(candidates, target, res, combination, 0);
+        return res;
+    }
+private:
+    void combinationSum(vector<int> &candidates, int target, vector<vector<int> > &res, vector<int> &combination, int begin) {
+        if  (target == 0) {
+            res.push_back(combination);
+            return;
+        }
+        for (int i = begin; i != candidates.size() && target >= candidates[i]; ++i) {            
+            combination.push_back(candidates[i]);
+            combinationSum(candidates, target - candidates[i], res, combination, i);
+            combination.pop_back();
+        }
+    }
+};
+***********************40. Combination Sum II********************************
+Given a collection of candidate numbers (C) and a target number (T), find all unique combinations in C where the candidate numbers sums to T.
+
+Each number in C may only be used once in the combination.
+
+Note:
+All numbers (including target) will be positive integers.
+The solution set must not contain duplicate combinations.
+For example, given candidate set [10, 1, 2, 7, 6, 1, 5] and target 8, 
+A solution set is: 
+[
+  [1, 7],
+  [1, 2, 5],
+  [2, 6],
+  [1, 1, 6]
+]
+class Solution {
+public:    
+	/*
+    void helper(vector<int> &candidates, int target, set< vector<int> > &res, vector<int> &combination, int start)
+    {
+        if (target == 0) {
+            res.insert(combination);
+            return;
+        }
+        for(int i = start; i < candidates.size() && candidates[i] <= target; i++) {
+            combination.push_back(candidates[i]);
+            helper(candidates, target-candidates[i], res, combination, i+1);
+            combination.pop_back();
+        }
+	}
+    vector<vector<int>> combinationSum2(vector<int>& candidates, int target) {
+        set<vector<int> > res;
+        vector<int> combination;
+        sort(candidates.begin(), candidates.end());        
+        helper(candidates, target, res, combination, 0);        
+        vector<vector<int> > ans;
+        for(auto &i : res)
+            ans.push_back(i);        
+        return ans;
+    }
+	*/
+	
+    vector<vector<int>> combinationSum2(vector<int>& candidates, int target) {
+        vector<vector<int>> res;
+        vector<int> v;
+        sort(candidates.begin(), candidates.end());
+        backtrack(res, v, candidates, target, 0);
+        return res;
+            
+    }
+    void backtrack(vector<vector<int>> &res, vector<int> &v, vector<int> &candidates, int target, int begin){
+        if(target == 0){
+            res.push_back(v);
+            return;
+        }
+        for(int i = begin; i < candidates.size(); i++){
+            if(i > begin && candidates[i-1] == candidates[i]) 
+                continue;
+            if(candidates[i] > target) 
+                break;
+            v.push_back(candidates[i]);
+            backtrack(res, v, candidates, target - candidates[i], i+1);
+            v.pop_back();
+        }
+    }
+	
+};
+************************42. Trapping Rain Water*******************************
+Given n non-negative integers representing an elevation map where the width of each bar is 1, compute how much water it is able to trap after raining.
+
+For example, 
+Given [0,1,0,2,1,0,1,3,2,1,2,1], return 6.
+class Solution {
+public:
+    int trap(vector<int>& height) {        
+    //建立two pointer， L， R
+	// L从左到右扫描， R从右到左扫描，在此过程中维护两个最大值，leftMax和rightMax 
+    int L(0), R(height.size() - 1), res(0), leftMax(0), rightMax(0);
+    while(L < R){
+        if (height[L] > height[R]) //根据“短板理论”，如果右板比左板短，那么res += rightMax - height[R];
+		{
+            rightMax = max( height[R], rightMax );//维护一个右侧板最大值 
+            res += rightMax - height[R];
+            R--;//更新右侧pointer 
+        }
+        else//根据“短板理论”，如果左板比右板短，那么res += leftMax - height[L];
+		{
+            leftMax = max( leftMax, height[L] );//维护一个左板的最大值 
+            res += leftMax - height[L];
+            L++;//更新左侧pointer
+        }
+    }
+    return res;    
+    }
+};
+************************45. Jump Game II*******************************
+Given an array of non-negative integers, you are initially positioned at the first index of the array.
+
+Each element in the array represents your maximum jump length at that position.
+
+Your goal is to reach the last index in the minimum number of jumps.
+
+For example:
+Given array A = [2,3,1,1,4]
+
+The minimum number of jumps to reach the last index is 2. (Jump 1 step from index 0 to 1, then 3 steps to the last index.)
+
+Note:
+You can assume that you can always reach the last index.
+class Solution {
+public:
+    //贪心算法，遍历整个数组，维护两个reachable范围，当前的reachable和下一跳的reachable
+    //当指针达到当前的reachable极限时，则需要跳一下（jump++)
+    int jump(vector<int>& nums) {
+        int jump = 0;
+        int cur_reachable = 0, next_reachable = 0;
+        for(int i =0; i <nums.size()-1; i++){ //不需要访问最后一个元素
+            next_reachable = max(nums[i]+i, next_reachable);
+            
+            if(i == cur_reachable){
+                jump++;
+                cur_reachable = next_reachable;
+            }
+            if(cur_reachable >= nums.size()-1 ) //如果当前可以调到终点，则提前结束
+                break;
+        }
+        return jump;
+    }
+};
+
+*************************48. Rotate Image******************************
+You are given an n x n 2D matrix representing an image.
+
+Rotate the image by 90 degrees (clockwise).
+
+Follow up:
+Could you do this in-place?
+class Solution {
+public:
+    void rotate(vector<vector<int>>& matrix) {
+        /*
+        1 2 3  to  7 4 1
+        4 5 6      8 5 2
+        7 8 9      9 6 3
+        */
+        reverse(matrix.begin(), matrix.end());//先把各行逆序
+        for(int i = 0; i < matrix.size(); i++){//然后按照对角线对调
+            for(int j = i+1; j < matrix[i].size(); j++){
+                swap(matrix[i][j], matrix[j][i]);
+            }
+        }        
+    }
+};
+*************************53. Maximum Subarray******************************
+Find the contiguous subarray within an array (containing at least one number) which has the largest sum.
+
+For example, given the array [-2,1,-3,4,-1,2,1,-5,4],
+the contiguous subarray [4,-1,2,1] has the largest sum = 6.
+class Solution {
+public:
+    
+    int maxSubArray(vector<int>& nums) {
+        int currentMax = 0;
+        int res = 0;
+        int maxValofArray = INT_MIN;
+        for(int i = 0; i < nums.size(); i++){
+            //找到数列的最大值，如果数列最大值是负数，则返回该负数
+            maxValofArray = max(nums[i], maxValofArray);
+            currentMax += nums[i];
+            if(currentMax < 0)
+                currentMax = 0;
+            res = max(currentMax, res);
+        }
+        if(maxValofArray < 0)
+            return maxValofArray;
+        return res;
+    }
+};
+**************************54. Spiral Matrix*****************************
+Given a matrix of m x n elements (m rows, n columns), return all elements of the matrix in spiral order.
+
+For example,
+Given the following matrix:
+
+[
+ [ 1, 2, 3 ],
+ [ 4, 5, 6 ],
+ [ 7, 8, 9 ]
+]
+You should return [1,2,3,6,9,8,7,4,5].
+class Solution {
+public:
+    vector<int> spiralOrder(vector<vector<int>>& matrix) {
+        vector<int> ans;
+        if (matrix.size() == 0)
+            return ans;
+        int row = matrix.size();
+        int col = matrix[0].size();
+        //最外层循环： 每执行一次循环，最外圈的元素都被push_back到res里
+        //下一次的循环，又“剥去”一层外圈
+        //像剥洋葱一样
+        //假设当前最外层处于第i次，则首行的行号：i,列号：[i -> col-i)
+        //最右边的列号:col-1-i; 最左边列号：i; 最下面的行号：row-1-i
+        //attention::use the min(col, row), since this is m*n matrix
+        for ( int i = 0; i <= (min(col, row)-1)/2; i++)
+        {
+            //push all the first row elements
+            for (int j = i; j < (col - i); j++)
+                ans.push_back(matrix[i][j]);
+             
+            //push the rightmost col elements
+            for (int j = i+1; j < (row-i-1); j++)
+            	ans.push_back(matrix[j][col-i-1]);
+            	
+            //if the buttom row is not the same as the first row
+            if ((row - i - 1) != i)
+            {
+                for (int j = col - i -1; j >=i; j--)
+            	    ans.push_back(matrix[row-i-1][j]);
+            }
+            
+            //if the leftmost line is not the rightmost col
+            if ((col - 1 - i) != i)
+            {
+                for (int j = row-i-2; j > i; j--)
+                    ans.push_back(matrix[j][i]);
+            }
+        }
+        return ans;
+    }
+};
+*************************55. Jump Game******************************
+Given an array of non-negative integers, you are initially positioned at the first index of the array.
+
+Each element in the array represents your maximum jump length at that position.
+
+Determine if you are able to reach the last index.
+
+For example:
+A = [2,3,1,1,4], return true.
+
+A = [3,2,1,0,4], return false.
+
+class Solution {
+public:
+    bool canJump(vector<int>& nums) {
+        int maxReachable = 0;
+        for(int i =0; i <= maxReachable; i++){
+            
+            maxReachable = max(i+nums[i], maxReachable);
+            if(maxReachable >= nums.size() -1)
+            return true;
+        }
+        return false;
+
+    }
+};
+***********************56. Merge Intervals********************************
+Given a collection of intervals, merge all overlapping intervals.
+
+For example,
+Given [1,3],[2,6],[8,10],[15,18],
+return [1,6],[8,10],[15,18].
+/**
+ * Definition for an interval.
+ * struct Interval {
+ *     int start;
+ *     int end;
+ *     Interval() : start(0), end(0) {}
+ *     Interval(int s, int e) : start(s), end(e) {}
+ * };
+ */
+class Solution {
+public:
+    vector<Interval> merge(vector<Interval>& intervals) {
+        vector<Interval> res;
+        if(intervals.empty()) return res;
+        sort(intervals.begin(), intervals.end(), [](Interval a, Interval b){return a.start < b.start;});
+        res.push_back(intervals[0]);
+        for(int i = 1; i < intervals.size(); i++){
+            if(intervals[i].start > res.back().end)
+                res.push_back(intervals[i]);
+            else
+                res.back().end = max(intervals[i].end, res.back().end);
+        }
+        return res; 
+    }
+};
+*************************59. Spiral Matrix II******************************
+Given an integer n, generate a square matrix filled with elements from 1 to n2 in spiral order.
+
+For example,
+Given n = 3,
+
+You should return the following matrix:
+[
+ [ 1, 2, 3 ],
+ [ 8, 9, 4 ],
+ [ 7, 6, 5 ]
+]
+class Solution {
+public:
+
+    void fillMatrix(vector< vector<int> > &v, int start, int size, int num)
+    {
+        if (size <= 0)
+            return;
+    
+        int upLeft = start; //up left corner
+        int upRight = start + size - 1; //up right corner
+        int downLeft = upRight + 2*size - 2; // left buttom corner
+        int end = downLeft + size - 2; // the end of one circle
+        
+        // put values from out circle to inner circle
+        // start from v[0][0], then start from v[1][1] and so on
+        for (int i = num; i < v.size() - num; i++)
+        {
+            v[num][i] = upLeft++;
+            v[i][v.size() - num-1] = upRight++;
+            v[v.size() - num-1][i] = downLeft--;
+            v[i][num] = (1+end--);
+        }
+        // reset the v[0][0], v[1][1]
+        v[num][num] = start;
+        //recursively change the start, the size, and the start index
+        fillMatrix(v, end+size+1, size-2, num+1);
+        
+    }
+    vector<vector<int>> generateMatrix(int n) {
+        vector<vector<int>> v;
+        v.resize(n);
+        for (int i =0 ; i < n; i++)
+            v[i].resize(n);
+            
+        fillMatrix(v, 1, n, 0);
+        return v;
+    }
+};
+***********************62. Unique Paths********************************
+A robot is located at the top-left corner of a m x n grid (marked 'Start' in the diagram below).
+
+The robot can only move either down or right at any point in time. The robot is trying to reach 
+the bottom-right corner of the grid (marked 'Finish' in the diagram below).
+
+How many possible unique paths are there?
+class Solution {
+public:
+	//动态规划： 假设每个格子内的数字代表从起点到达该格子的Path数
+	//那么第一行和第一列显然都填1，因为只能有一种方法到达
+	//而对于其他的格子，则等于其左面格子加上其上方格子的和
+	//返回最右下角的格子内的值即可
+    int uniquePaths(int m, int n) {
+        int matrix[m][n];
+        //初始化第一行
+        for (int j = 0; j < n; j++)
+            matrix[0][j] = 1;
+		//初始化第一列
+        for (int i = 0; i < m; i++)
+            matrix[i][0] = 1;
+        //动态地填充其余的格子  
+        for (int i = 1; i < m; i++)
+        {
+            for (int j = 1; j < n; j++)
+            {
+                matrix[i][j] = matrix[i-1][j] + matrix[i][j-1];
+            }
+        }        
+        return matrix[m-1][n-1];
+    }
+};
+*************************63. Unique Paths II******************************
+Follow up for "Unique Paths":
+Now consider if some obstacles are added to the grids. How many unique paths would there be?
+An obstacle and empty space is marked as 1 and 0 respectively in the grid.
+For example,
+There is one obstacle in the middle of a 3x3 grid as illustrated below.
+
+[
+  [0,0,0],
+  [0,1,0],
+  [0,0,0]
+]
+The total number of unique paths is 2.
+class Solution {
+public:
+    int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {        
+        int m = obstacleGrid.size(), n = obstacleGrid[0].size();
+        //add padding to the matrix
+        vector<vector<int>> dp(m+1,vector<int>(n+1,0));
+        dp[0][1] = 1;
+        for(int i = 1 ; i <= m ; ++i)
+            for(int j = 1 ; j <= n ; ++j)
+                if(obstacleGrid[i-1][j-1] == 0)
+                    dp[i][j] = dp[i-1][j]+dp[i][j-1];
+        return dp[m][n];    
+    }
+};
+***********************64. Minimum Path Sum********************************
+Given a m x n grid filled with non-negative numbers, find a path from top left to bottom right which minimizes the sum of all numbers along its path.
+
+Note: You can only move either down or right at any point in time.
+class Solution {
+public:
+    int minPathSum(vector<vector<int>>& grid) {
+        
+        int height = grid.size();
+        int width = grid[0].size();
+        for(int i = 1; i < height; i++){
+            grid[i][0] += grid[i-1][0];
+        }
+        for(int j = 1; j < width; j++){
+            grid[0][j] += grid[0][j-1];
+        }
+        for(int i = 1; i < height; i++){
+            for(int j = 1; j < width; j++){
+                grid[i][j] += min(grid[i-1][j], grid[i][j-1]);
+            }
+        }
+        return grid[height-1][width-1];
+    }
+};
+**********************66. Plus One*********************************
+Given a non-negative integer represented as a non-empty array of digits, plus one to the integer.
+You may assume the integer do not contain any leading zero, except the number 0 itself.
+The digits are stored such that the most significant digit is at the head of the list.
+
+class Solution {
+public:
+    vector<int> plusOne(vector<int>& digits) {
+        int number;
+        int carry = 1;
+        int temp;
+        //treat the digits except the first (highest) digit
+        for (int i = digits.size() - 1; i > 0; i--)
+        {
+            temp = digits[i] + carry;
+            digits[i] = temp % 10;
+            if (temp >= 10)
+                carry = 1;
+            else
+                carry = 0;
+        }
+        //treat the highest digit
+        if (carry == 1 && digits[0] == 9)
+        {
+            digits[0] = 1;
+            digits.push_back(0);
+        }
+        else
+            digits[0] += carry;
+        return digits;
+    }
+};
+***********************73. Set Matrix Zeroes********************************
+Given a m x n matrix, if an element is 0, set its entire row and column to 0. Do it in place.
+class Solution {
+public:
+    void setZeroes(vector<vector<int>>& matrix) 
+    {
+        int row = matrix.size();
+        int col = matrix[0].size();
+        bool firstRowHasZero = false;
+        bool firstColHasZero = false;
+        //检查第一行是否含有0
+        for(int i = 0; i < row; i++){
+            if(matrix[i][0] == 0){
+                firstColHasZero = true;
+                break;
+            }
+        }
+        //检查第一列是否含有0
+        for(int j = 0; j < col; j++){
+            if(matrix[0][j] == 0){
+                firstRowHasZero = true;
+                break;
+            }
+        }
+        //把其余行和列的0映射到第一行和第一列上面
+        for (int i = 1; i < row; i++)
+        {
+            for(int j = 1; j < col; j++){
+                if (matrix[i][j] == 0){
+                    matrix[0][j] = 0;
+                    matrix[i][0] = 0;
+                }
+            }
+        }
+        //如果对应的第一行或者第一列为0，设置该元素为0
+        for(int i = 1; i < row; i++){
+            for(int j = 1; j < col; j++){
+                if(matrix[i][0] == 0 || matrix[0][j] == 0)
+                    matrix[i][j] = 0;
+            }
+        }
+        //如果第一行或者第一列有0，设置其全为0
+        if(firstRowHasZero){
+            for(int j = 0; j < col; j++)
+                matrix[0][j] = 0;
+        }
+        if(firstColHasZero){
+            for(int i = 0; i < row; i++)
+                matrix[i][0] = 0;
+        }
+    }
+};
+************************74. Search a 2D Matrix*******************************
+Write an efficient algorithm that searches for a value in an m x n matrix. This matrix has the following properties:
+
+Integers in each row are sorted from left to right.
+The first integer of each row is greater than the last integer of the previous row.
+For example,
+Consider the following matrix:
+
+[
+  [1,   3,  5,  7],
+  [10, 11, 16, 20],
+  [23, 30, 34, 50]
+]
+Given target = 3, return true.
+class Solution {
+public:
+    bool biSearch(vector<int> &vec, int target){
+        return 1;
+    }
+    bool searchMatrix(vector<vector<int>>& matrix, int target) {
+        if(matrix.empty() || matrix[0].empty()) return false;
+        int row = matrix.size();
+        int left = 0, right = row-1, mid = 0;
+        if(matrix[0][0] > target) return false;//需要先排除该情况
+        while(left <= right){
+            mid = left +(right-left)/2;
+            if(matrix[mid][0] == target)
+                return true;
+            if(matrix[mid][0] > target)
+                right = mid-1;
+            else
+                left = mid+1;
+        }
+		//right 是现在target可能在的行
+		//[0,1,3,5,8] 如果target是-1， right=-1；如果target是2，则right = 1
+        return binary_search(matrix[right].begin(), matrix[right].end(), target);
+        
+************************75. Sort Colors*******************************
+Given an array with n objects colored red, white or blue, sort them so that objects of the same color are adjacent,
+with the colors in the order red, white and blue.
+
+Here, we will use the integers 0, 1, and 2 to represent the color red, white, and blue respectively.
+class Solution {
+public:
+    void sortColors(vector<int>& nums) 
+    {
+    	int positionOne = 0;
+    	int positionTwo = 0;
+    	for (int i = 0; i < nums.size(); i++)
+    	{
+    		if (nums[i] == 0)
+    		{
+    			nums[i] = 2;
+    			nums[positionTwo] = 1;
+    			nums[positionOne] = 0;
+    			
+    			positionOne++;
+    			positionTwo++;
+    		}
+    		else if (nums[i] == 1)
+    		{
+    			nums[i] = 2;
+    			nums[positionTwo] = 1;
+    			
+    			positionTwo++;
+    		}
+    	}
+    }
+  };
+***********************78. Subsets********************************
+Given a set of distinct integers, nums, return all possible subsets.
+
+Note: The solution set must not contain duplicate subsets.
+
+For example,
+If nums = [1,2,3], a solution is:
+
+[
+  [3],
+  [1],
+  [2],
+  [1,2,3],
+  [1,3],
+  [2,3],
+  [1,2],
+  []
+]
+class Solution {
+public:
+    // [] -> [[]]
+    // [1] -> [[], [1]]
+    // [1,2] -> [[], [1], [2], [1,2]]
+    // 如果输入的vector有n个不同元素, 则一共有2^n 个排列
+    // 假设输入[1,2,3], 那么产生8个组合
+    // [] 1 2 3
+    //  8 4 2 1 ----4 bits
+    //  1 0 0 0 ---- number 7, put []
+    //  0 1 1 1 ---- number 6, put 1 2 3
+    //  
+    // [[]]
+    // [[], [1]]
+    // [[], [1], [2], [1,2]]
+    vector<vector<int> > subsets(vector<int>& v)
+    {
+        sort(v.begin(), v.end());
+        vector<vector<int> > res = {{}};
+	    vector<int> sender;
+	    vector<int> acceptor;
+	    for (int i = 1; i < pow(2, v.size()); i++){
+		    int tmp = i; // tmp = 1
+    		for(int j = 0; j < v.size(); j++){//loop 3 times
+    			if(tmp%2 == 1) // tmp == 1; tmp 
+    			    sender.push_back(v[v.size()-1-j]);//v[3-1-0] = v[2] = 3
+    			tmp >>= 1; //tmp = 2; tmp = 4
+    		}
+    		res.push_back(sender);
+    		sender.clear();
+	    }
+	    return res;
+    }
+
+
+/*
+    void helper(vector<int> nums, vector<vector<int> > &smaller){
+    	if (nums.size() == 0)
+    		return;
+    		
+    	int extra = nums.back();
+    	nums.pop_back();
+    	helper(nums, smaller);
+
+    	vector<vector<int> > newV;
+    	for(vector<int> i : smaller)
+    	{
+    		i.push_back(extra);
+    		newV.push_back(i);
+		}
+    	for (vector<int> i : newV)
+    		smaller.push_back(i);
+
+	}
+    vector<vector<int> > subsets(vector<int>& nums) {
+        vector<vector<int> > v = {{}};
+        sort(nums.begin(), nums.end());
+        helper(nums, v) ;
+        return v;
+    }
+*/    
+};
+***********************79. Word Search********************************
+Given a 2D board and a word, find if the word exists in the grid.
+
+The word can be constructed from letters of sequentially adjacent cell, where "adjacent" cells 
+are those horizontally or vertically neighboring. The same letter cell may not be used more than once.
+For example,
+Given board =
+
+[
+  ['A','B','C','E'],
+  ['S','F','C','S'],
+  ['A','D','E','E']
+]
+word = "ABCCED", -> returns true,
+word = "SEE", -> returns true,
+word = "ABCB", -> returns false.
+class Solution {
+public:
+    bool exist(vector<vector<char>>& board, string word) {
+        vector<vector<char>> new_board;
+        //padding the new board
+        new_board.resize(board.size()+2);
+        for(int i = 0; i < new_board.size(); i++){
+            new_board[i].resize(board[0].size()+2);
+        }
+             
+       /* 
+        for(int j = 0; j < new_board[0].size(); j++){
+            new_board[0][j] = '@';
+            new_board[new_board.size()-1][j] = '@';
+        }
+             
+        for(int i = 0; i < new_board.size(); i++){
+            new_board[i][0] = '@';
+            new_board[i][new_board[0].size()-1] = '@';
+        }
+        
+        */
+    //
+        for(int i = 1; i <= board.size(); i++){
+            for(int j = 1; j<=board[0].size(); j++){
+                new_board[i][j] = board[i-1][j-1];
+            }
+        }
+        
+        /*
+        for(int i = 1; i <= board.size(); i++){
+            for(int j = 1; j<=board[0].size(); j++){
+                 cout <<  new_board[i][j] << " ";
+            }
+            cout << endl;
+        }
+        */
+        bool res = false;
+        for(int i = 1; i <= board.size(); i++){
+            for(int j = 1; j <= board[0].size(); j++){
+                
+                if(new_board[i][j] == word[0]){
+                    helper(new_board, word, 0, i, j, res); 
+                }
+
+                if(res)
+                    return true;
+            }
+        }
+        return false;
+        
+        
+    }
+private:
+    void helper(vector<vector<char>>& board, string &word, int idx, int x, int y, bool &res){
+        if (res || idx == word.size()-1){
+            res = true;
+            return;
+        }
+        char tmp = board[x][y];
+        board[x][y] = '\n';
+        if(board[x-1][y] == word[idx+1])
+            helper(board, word, idx+1, x-1, y, res);
+        if(board[x+1][y] == word[idx+1])
+            helper(board, word, idx+1, x+1, y, res);
+        if(board[x][y-1] == word[idx+1])
+            helper(board, word, idx+1, x, y-1, res);
+        if(board[x][y+1] == word[idx+1])
+            helper(board, word, idx+1, x, y+1, res);
+        board[x][y] = tmp;
+    }
+};
+***********************80. Remove Duplicates from Sorted Array II********************************
+Follow up for "Remove Duplicates":
+What if duplicates are allowed at most twice?
+
+For example,
+Given sorted array nums = [1,1,1,2,2,3],
+Your function should return length = 5, with the first five elements of nums being 1, 1, 2, 2 and 3. 
+It doesn't matter what you leave beyond the new length.
+class Solution {
+public:
+    int removeDuplicates(vector<int>& nums) {
+        if (nums.size() <= 2)
+            return nums.size();
+        //two pointers: k是一个pointer,记录当前“浓缩后”（最多可以重复一次）的index, i是另一个pointer,遍历整个数组
+        //cnt记录当前有几个重复元素了
+        int cnt(1),k(1);//因为从nums[1]开始，所以cnt初始化为1，k初始化为1
+        for (int i = 1; i < nums.size(); i++)//i遍历整个数组
+        {
+            if (nums[i] == nums[i-1])//如果当前的nums[i]和nums[i-1]相等，cnt++;
+                cnt++;
+            else//否则，如果不相等，说明遇到了新的元素，cnt = 1;
+                cnt = 1;
+                
+            if (cnt <= 2)//只要cnt <= 2, 那么就更改nums[k] = nums[i], 并且k++;
+                nums[k++] = nums[i];
+        }
+        return k;
+    }
+};
+************************81. Search in Rotated Sorted Array II*******************************
+Suppose an array sorted in ascending order is rotated at some pivot unknown to you beforehand.
+
+(i.e., 0 1 2 4 5 6 7 might become 4 5 6 7 0 1 2).
+
+Write a function to determine if a given target is in the array.
+The array may contain duplicates.
+class Solution {
+public:
+    //标准binary search，可以处理duplicated的情况
+    bool biSearch(vector<int> &nums, int l, int r, int target){
+        while(l <= r){
+            int mid = l + (r-l)/2;
+            if(nums[mid] == target) 
+                return true;
+            if(nums[mid] < target)
+                l = mid+1;
+            else
+                r = mid-1;
+        }
+        return false;
+    }
+    bool search(vector<int>& nums, int target) {
+        if(nums.empty()) return false;
+        if(nums.size() == 1)
+            return nums[0] == target;
+        if(nums[0] == target || nums.back() == target)//首先看头尾，如果头或者尾是target,直接返回真
+            return true;
+        
+        //清洗掉头和尾的重复元素    
+        int l = 0, r = nums.size()-1;
+        int tmp = nums[0], tmp2 = nums.back();
+        while(l<nums.size() && nums[l] == tmp) 
+            l++;
+        if(l == nums.size()) 
+            return false;//说明数组全部是相同元素
+        while(r>=0 && nums[r] == tmp2) 
+            r--;
+        if(l > r) 
+            return false; //说明数组有结构类似：[1,1,1,2,2] target = 0
+        
+        if(nums[l] < nums[r])
+            return biSearch(nums, l, r, target);
+            
+        //start和end是经过clean以后的数据，接下来就是跟[Search in Rotated Sorted Array I] 一样的步骤了
+        int start =l, end = r;
+        //知道到pivot所在的位置
+        while(l < r){
+            if(l+1 == r)
+                break;
+            int mid = l + (r-l)/2;
+            if(nums[mid]>nums[r])
+                l=mid;
+            else
+                r = mid;
+        }
+        //现在l, r 是转轴的位置
+        if(target < nums[start])
+            return biSearch(nums, r, end, target);
+        else
+            return biSearch(nums, start, l, target);            
+    }
+};
+***********************88. Merge Sorted Array********************************
+Given two sorted integer arrays nums1 and nums2, merge nums2 into nums1 as one sorted array.
+
+Note:
+You may assume that nums1 has enough space (size that is greater or equal to m + n) to hold additional elements from nums2. 
+The number of elements initialized in nums1 and nums2 are m and n respectively.
+class Solution {
+public:
+    void merge(vector<int>& nums1, int m, vector<int>& nums2, int n) {
+        int i = m-1;
+        int j = n-1;
+        int k = m+n-1;
+        while (i >= 0 && j >= 0)
+        {
+            if (nums1[i] > nums2[j])
+                nums1[k--] = nums1[i--];
+            else
+                nums1[k--] = nums2[j--];
+        }
+        while (j >= 0)
+        {
+            nums1[k--] = nums2[j--];
+        }
+    }
+};
+*************************90. Subsets II******************************
+Given a collection of integers that might contain duplicates, nums, return all possible subsets.
+
+Note: The solution set must not contain duplicate subsets.
+
+For example,
+If nums = [1,2,2], a solution is:
+
+[
+  [2],
+  [1],
+  [1,2,2],
+  [2,2],
+  [1,2],
+  []
+]
+class Solution:
+    # @param {integer[]} nums
+    # @return {integer[][]}
+    def recursiveHelper(self, nums):
+        if len(nums) == 0:
+            return [[]]
+            
+        smaller = self.recursiveHelper(nums[:-1])
+        extra = nums[-1:]
+        
+        new = []
+        for item in smaller:
+            new.append(item + extra)
+            
+        for item in new:
+            if item not in smaller:
+                smaller.append(item)
+        return smaller
+        
+        
+    def subsetsWithDup(self, nums):
+        nums.sort()
+        return self.recursiveHelper(nums)
+*********************118. Pascal's Triangle*******************
+Given numRows, generate the first numRows of Pascal's triangle.
+
+For example, given numRows = 5,
+Return
+
+[
+     [1],
+    [1,1],
+   [1,2,1],
+  [1,3,3,1],
+ [1,4,6,4,1]
+]
+class Solution {
+public:
+    vector<vector<int>> generate(int numRows) {
+        vector< vector<int> > result;
+        for (int i = 0; i < numRows; i++)
+        {
+            vector<int> singleRow;
+            singleRow.push_back(1); // no matter what, push 1 at head
+            int j = 1;
+            while (j < i)//when i==0 or i==1, this will not excute
+            {
+                singleRow.push_back(result[i-1][j-1] + result[i-1][j]);
+                j++;
+            }
+            if (i > 0)//if i != 0, need push back 1 at the tail
+                singleRow.push_back(1);
+            result.push_back(singleRow);
+        }
+        return result;
+    }
+};
+
+
+*************************119. Pascal's Triangle II**************************
+Given an index k, return the kth row of the Pascal's triangle.
+
+For example, given k = 3,
+Return [1,3,3,1].
+class Solution {
+public:
+    vector<int> getRow(int rowIndex) {
+        vector<int> A(rowIndex+1, 0);
+        A[0] = 1;
+        for(int i=1; i<rowIndex+1; i++)
+            for(int j=i; j>=1; j--)
+                A[j] += A[j-1];
+		//i=1 : A[1] += A[0]
+		//i=2 : A[2] += A[1]; A[1]+=A[0]
+		//i=3 : A[3] += A[2]; A[2] += A[1]; A[1]+=A[0]
+        return A;
+    }
+};
+**************************120. Triangle*****************************
+Given a triangle, find the minimum path sum from top to bottom.
+Each step you may move to adjacent numbers on the row below.
+
+For example, given the following triangle
+[
+     [2],
+    [3,4],
+   [6,5,7],
+  [4,1,8,3]
+]
+The minimum path sum from top to bottom is 11 (i.e., 2 + 3 + 5 + 1 = 11).
+class Solution {
+public:
+    int minimumTotal(vector<vector<int> > &triangle) {
+       //int res = triangle[0][0];
+       //层层递进计算
+       //当前层是N， 则对于N+1层的最左（右）边元素 += N层的最左（右）边元素
+       //而对于中间的那些元素则 += 上层相邻元素中较小的那一个
+       for(int i = 1; i < triangle.size(); i++){
+           int row_size = triangle[i].size();
+           triangle[i][0] += triangle[i-1][0];
+           for(int j = 1; j < row_size-1; j++){
+               triangle[i][j] += min(triangle[i-1][j-1], triangle[i-1][j]);
+           }
+           triangle[i][row_size-1] += triangle[i-1].back();
+       }
+      //在最后一层中找出最小的那个就是结果 
+      int res = triangle[triangle.size()-1][0];
+       for(int j = 0; j < triangle[triangle.size()-1].size(); j++){
+           res = min(res, triangle[triangle.size()-1][j]);
+       }
+       return res;
+    }
+};
+************************121. Best Time to Buy and Sell Stock******************************
+Say you have an array for which the ith element is the price of a given stock on day i.
+
+If you were only permitted to complete at most one transaction (ie, buy one and sell one share of the stock), 
+design an algorithm to find the maximum profit.
+
+Example 1:
+Input: [7, 1, 5, 3, 6, 4]
+Output: 5
+
+max. difference = 6-1 = 5 (not 7-1 = 6, as selling price needs to be larger than buying price)
+Example 2:
+Input: [7, 6, 4, 3, 1]
+Output: 0
+
+In this case, no transaction is done, i.e. max profit = 0.
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+	//track当前的已经见过的最小值，并计算当前的盈利。如此，遍历整个数组得到最大盈利。
+        int cur_min = INT_MAX;
+        int res = 0;
+        
+        for(int i = 0; i < prices.size(); ++i){
+            cur_min = min(cur_min, prices[i]);
+            res = max(prices[i] - cur_min, res);
+        }
+        return res;
+    }
+};
+************************122. Best Time to Buy and Sell Stock II*******************************
+Say you have an array for which the ith element is the price of a given stock on day i.
+
+Design an algorithm to find the maximum profit. You may complete as many transactions as you like (ie, 
+buy one and sell one share of the stock multiple times). However, you may not engage in multiple transactions at the same time 
+(ie, you must sell the stock before you buy again).
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        if (prices.size() <=1)
+            return 0;
+        
+        int profit = 0;
+        for (int i = 1; i < prices.size(); i++)
+        {
+            if (prices[i] > prices[i-1])
+                profit += (prices[i] - prices[i-1]);
+            
+        }     
+        return profit;
+
+    }
+};
+***************************128. Longest Consecutive Sequence****************************
+Given an unsorted array of integers, find the length of the longest consecutive elements sequence.
+
+For example,
+Given [100, 4, 200, 1, 3, 2],
+The longest consecutive elements sequence is [1, 2, 3, 4]. Return its length: 4.
+
+Your algorithm should run in O(n) complexity.
+class Solution {
+public:
+    int longestConsecutive(vector<int>& nums) {
+        //初始化一个新的unordered_set
+        unordered_set<int> myset(nums.begin(), nums.end());
+        int res = 0;
+        for(int num : nums)
+        {
+            if ( myset.find(num) != myset.end() )
+            {
+                myset.erase(num);
+                int pre = num-1, post = num+1;
+				//寻找前值
+                while(myset.find(pre) != myset.end() )
+                    myset.erase(pre--);
+				//寻找后值
+                while(myset.find(post) != myset.end() )
+                    myset.erase(post++);
+				//keep track最长的连续值
+                res = max(res, post-pre-1);
+            }
+        }
+        return res;
+    }
+};
+***************************153. Find Minimum in Rotated Sorted Array***************************
+Suppose an array sorted in ascending order is rotated at some pivot unknown to you beforehand.
+
+(i.e., 0 1 2 4 5 6 7 might become 4 5 6 7 0 1 2).
+
+Find the minimum element.
+
+You may assume no duplicate exists in the array.
+class Solution {
+public:
+    
+    int findMin(vector<int>& nums) {
+        
+        int l = 0;
+        int r = nums.size()-1;
+        if(nums.size()==1) return nums[0];
+        if(nums[l] < nums[r]) return nums[l];
+        while(1){
+            if(l+1==r)
+               break;
+            
+            int mid = l+(r-l)/2;
+            if(nums[mid] > nums[l])
+                l = mid;
+            else
+                r = mid;
+        }
+        return min(nums[l], nums[r]);
+    }
+};
+*************************154. Find Minimum in Rotated Sorted Array II*************************
+Suppose an array sorted in ascending order is rotated at some pivot unknown to you beforehand.
+
+(i.e., 0 1 2 4 5 6 7 might become 4 5 6 7 0 1 2).
+
+Find the minimum element.
+class Solution {
+public:
+    int findMin(vector<int>& nums) {
+        int l(0), r(nums.size()-1);
+
+        while(l < r-1){
+           
+            int mid = l + (r - l) / 2;
+                
+            if(nums[l] < nums[mid]){
+                if(nums[mid] <= nums[r])
+                    return nums[l];
+                l = mid;
+            }
+            else if(nums[mid] < nums[l])
+                r = mid;
+            else
+                l++;          
+        }
+        return min(nums[l], nums[r]);
+    }
+};
+*************************162. Find Peak Element*************************
+A peak element is an element that is greater than its neighbors.
+Given an input array where num[i] ≠ num[i+1], find a peak element and return its index.
+The array may contain multiple peaks, in that case return the index to any one of the peaks is fine.
+You may imagine that num[-1] = num[n] = -∞.
+
+For example, in array [1, 2, 3, 1], 3 is a peak element and your function should return the index number 2.
+class Solution {
+public:
+	/*
+	//[1,2,3,4,5,6,7,1,0] 
+	因为num[-1] = num[n] = -∞， 所以，一定存在至少一个peak， 假设只存在一个peak，那么当取mid元素时， mid可能落在左边半坡，
+	或者落在右边半坡，我们只需要比较nums[mid] 和nums[mid+1]的大小即可判断；
+	如果mid落在左边上坡，则peak在右边，所以L=mid+1
+	如果mid落在右边下坡，则peak在左边，所以R=mid
+	     /\
+		/  \      
+	   /	。
+      。 	
+	 start  end
+	 
+	 
+	 	 /\
+		/  \
+	   。 	\
+        	 。
+	 start  end
+	 
+	*/ 
+    int findPeakElement(vector<int>& nums) {
+        int L = 0;
+        int R = nums.size()-1;
+        int mid;
+        while(1)
+        {
+            // at some time, L and R will be equal
+            if (L==R)
+                return L;
+            mid = L + (R- L)/2;
+            //no matter what, the mid+1 index always exist			
+            if (nums[mid] > nums[mid+1])	//mid落在右半坡
+                R = mid;
+            else	//mid落在左半坡
+                L = mid+1;
+        }
+    }
+};
+*********************167. Two Sum II - Input array is sorted*****************************
+Given an array of integers that is already sorted in ascending order, find two numbers such that they add up to a specific target number.
+The function twoSum should return indices of the two numbers such that they add up to the target, 
+where index1 must be less than index2. Please note that your returned answers (both index1 and index2) are not zero-based.
+You may assume that each input would have exactly one solution and you may not use the same element twice.
+
+Input: numbers={2, 7, 11, 15}, target=9
+Output: index1=1, index2=2
+class Solution {
+public:
+	//对于排好序的two sum， 分别设置左右两个Pointer，并计算两个数的和。 
+	//如果现在这两个数的和小于目标值，递增左侧Pointer, 反之，递减右侧pointer. 
+    vector<int> twoSum(vector<int>& numbers, int target) {
+        int i =0, j = numbers.size() -1;
+        vector<int> res;
+        while(i <j ){
+            int sum = numbers[i] + numbers[j];
+            if( sum == target){
+                res.push_back(i+1);
+                res.push_back(j+1);
+            }
+            if(sum > target) j--;
+            else i++;
+        }
+        return res;
+    }
+};
+**********************169. Majority Element****************************
+Given an array of size n, find the majority element. The majority element is the element that appears more than ⌊ n/2 ⌋ times.
+
+You may assume that the array is non-empty and the majority element always exist in the array.
+//method one
+class Solution {
+public:
+    int majorityElement(vector<int>& nums) {
+        int candidate = nums[0], cnt = 1;//假设第一个元素是我们要找的多数元素(处理了只有一个元素的情况)
+        for(int i = 1; i < nums.size(); i++){
+            if(cnt == 0){//如果计数器等于0，更改假设目标，并将计数器重置为1 //相当于抵消了一个元素。
+                candidate = nums[i];
+                cnt++;
+                continue;
+            }
+            if(nums[i] == candidate)
+                cnt++;//如果正在遍历的元素与假设元素相同，计数器加1,否则减1
+            else{
+                cnt--;
+			}
+        }
+        return candidate;
+    }
+};
+//method two
+class Solution {
+public:
+
+    int majorityElement(vector<int>& nums) {
+        int res = 0, mask = 1;
+        for(int i = 0; i < 32; i++){
+            int count = 0;
+            for(int num : nums){
+                if((mask & num) != 0)
+                    count++;
+                if(count > nums.size()/2){
+                     res |= mask;
+                     break;
+                }
+            }
+            mask <<= 1; 
+        }
+        return res;
+    }
+};
+*************************189. Rotate Array*************************
+Rotate an array of n elements to the right by k steps.
+
+For example, with n = 7 and k = 3, the array [1,2,3,4,5,6,7] is rotated to [5,6,7,1,2,3,4].
+class Solution {
+public:
+    void rotate(vector<int>& nums, int k) {
+        //if k == nums.size(), then make no change
+        if (k == nums.size())
+            return;
+        // if k > nums.size(), k = k % nums.size()
+        if (k > nums.size())
+    	    k = k % nums.size();
+    	//set up a helper vector
+    	vector<int> helper(k);
+    	
+        copy(nums.end()-k, nums.end(),helper.begin());
+        copy(nums.begin(), nums.end()-k, nums.begin()+k);
+        copy(helper.begin(), helper.end(), nums.begin());
+    }
+};
+************************209. Minimum Size Subarray Sum**************************
+Given an array of n positive integers and a positive integer s, find the minimal length of a 
+contiguous subarray of which the sum ≥ s. If there isn't one, return 0 instead.
+
+For example, given the array [2,3,1,2,4,3] and s = 7,
+the subarray [4,3] has the minimal length under the problem constraint.
+class Solution {
+public:
+    int minSubArrayLen(int s, vector<int>& nums) {
+        int left = 0, res = INT_MAX, total = 0;
+        for(int i = 0; i < nums.size(); i++){
+            total += nums[i];
+            while(total >= s){ //有可能一直不进while, 比如 ([1,1], 3)
+                res = min(res, i+1-left);
+                total -= nums[left++];
+            }            
+        }
+        return res == INT_MAX? 0: res;
+    }
+};
+***********************216. Combination Sum III***************************
+Find all possible combinations of k numbers that add up to a number n, given that only numbers from 1 to 9 
+can be used and each combination should be a unique set of numbers.
+
+Example 1:
+
+Input: k = 3, n = 7
+
+Output:
+
+[[1,2,4]]
+
+Example 2:
+
+Input: k = 3, n = 9
+
+Output:
+
+[[1,2,6], [1,3,5], [2,3,4]]
+class Solution {
+public:
+    void helper(vector<vector<int> > &res, int k, int n, vector<int> &temp,int start){
+        if(temp.size() == k){
+            if(n == 0)
+                res.push_back(temp);
+            return;
+        }
+        for(int i = start; i <= 9 && i <= n; i++){
+            temp.push_back(i);
+            helper(res, k, n-i, temp, i+1);
+            temp.pop_back();
+        }
+    }
+    vector<vector<int>> combinationSum3(int k, int n) {
+        vector<vector<int> > res;
+        vector<int> temp;
+        helper(res, k, n, temp, 1);
+        return res;
+    }
+};
+**********************217. Contains Duplicate****************************
+Given an array of integers, find if the array contains any duplicates. 
+Your function should return true if any value appears at least twice in the array, and it should return false if every element is distinct.
+class Solution {
+public:
+    bool containsDuplicate(vector<int>& nums) {
+        return nums.size() > set<int>(nums.begin(), nums.end()).size();
+    }
+};
+************************219. Contains Duplicate II**************************
+Given an array of integers and an integer k, find out whether there are two distinct indices i and j in the array 
+such that nums[i] = nums[j] and the absolute difference between i and j is at most k.
+class Solution {
+public:
+    bool containsNearbyDuplicate(vector<int>& nums, int k) {
+	if (nums.size() < 2)
+		return false;
+	unordered_map<int, int> mp; //mp起初是空的
+	//下面将建立键值对（nums[i] : i）
+	int curVal;
+	for (int i = 0; i < nums.size(); i++)
+	{
+		//vector <int > vec = { 1,2,3,4,5,2,6,2,7 };
+		curVal = nums[i];	
+		
+		//如果mp.find(nums[i]) == mp.end()，说明nums[i]不在mp中
+		//所以把nums[i]:i 插入到mp中
+		//或者mp.find(nums[i]) != mp.end()，说明nums[i]在mp中
+		//但是i - mp[ nums[i] ] > k，说明不满足 i - j最大为k的条件，
+		//则会更新nums[i]:i 
+		if (mp.find(curVal) != mp.end() && i - mp[curVal] <= k)
+			return true;
+		mp[curVal] = i;//更新已经存在的键对应的值
+
+    }
+    return false;
+    }
+};
+
+**********************228. Summary Ranges****************************
+Given a sorted integer array without duplicates, return the summary of its ranges.
+
+For example, given [0,1,2,4,5,7], return ["0->2","4->5","7"].
+class Solution {
+public:
+    vector<string> summaryRanges(vector<int>& nums) {
+        vector<string> ans;
+        for(int i = 0; i < nums.size();)
+        {
+            string s = "";
+            int j = i;
+            // increse j until reach a none-successive number
+            //关键：nums[j] - nums[i] == j-i
+            while (j < nums.size() && nums[j] - nums[i] == j - i)            
+                j++;
+            
+            //上面的循环结束时，nums[j] 已经不再是succssive数
+            //if j only incresed one, 意味着只有一个孤立元素 
+            if(j == i+1)
+                s = to_string(nums[i]);
+            else
+                s += to_string(nums[i]) + "->" + to_string(nums[j-1]);    
+
+            ans.push_back(s);
+            //update i
+            i = j;
+        }
+        return ans;
+    }
+};
+
+***********************229. Majority Element II***************************
+Given an integer array of size n, find all elements that appear more than ⌊ n/3 ⌋ times. 
+The algorithm should run in linear time and in O(1) space.
+//http://blog.csdn.net/liuintermilan/article/details/6328354
+//http://blog.csdn.net/wdxin1322/article/details/13510739
+
+class Solution {
+public:
+    vector<int> majorityElement(vector<int>& nums) {
+        vector<int> ans;
+        
+        if (nums.size() == 0)
+            return ans;
+        //设想有一袋包含有各种颜色的球。当三个不同颜色的球碰撞在一起的时候，三个球会一起消失。
+        //桌上有两个放球的坑，num1, num2；
+        //
+        //假设来了一个新球，那么如果1#球坑是空的，那么把球坑填上该球，num1 = 1; 
+        //或者如果这个球的颜色与已经放好的球的颜色相同，而与二号坑的球颜色不同，则1#坑计数器cnt1++;
+        //如果来了一个新球，2#坑是空的，那么同理，把新球填入2号坑。如果2号坑非空，而且新球颜色与2#坑中球颜色一致，则cnt2++;
+        //如果来了一个新球，与这两个坑中球的颜色都不同，那么三球相撞，三球同时消失，新球不用存到坑里，而且cnt1--; cnt2--;
+        //最后坑里剩下的球的颜色就是多数的球的颜色
+        int num1, num2, cnt1(0), cnt2(0);//num1, num2是两个坑里现在的球的数字； cnt1，cnt2是现在的坑里的球的数目
+        for (int i = 0; i < nums.size(); i++){
+            //如果cnt1是空的，代表三个不同元素出现过了一次，那么num1 = 新元素，且cnt1 = 1
+            //或者nums[i]新元素等于num1, 那么cnt++;
+
+            //需要排除cnt1*cnt2 == 0 && num1 == num2的情况, 比如：[1,2,2,3,2,1,1,3]
+        	if((cnt1 == 0 || nums[i] == num1) && nums[i] != num2){
+                cnt1++;
+                num1 = nums[i];
+            }
+            else if (cnt2 == 0 || nums[i] == num2){
+                cnt2++;
+                num2 = nums[i];
+            }
+            else{
+            	cnt2--;cnt1--;
+			} 
+        }
+        //检验所剩下的元素是否满足大于三分之一总数的要求，如果满足，push_back到结果
+        cnt1 = cnt2 = 0;
+        for(int i = 0; i < nums.size(); i++){
+            if (nums[i] == num1)
+                cnt1++;
+            if (nums[i] == num2)
+                cnt2++;
+        }
+        if(cnt1 > nums.size() / 3)
+            ans.push_back(num1);
+        if (cnt2 > nums.size() / 3 )
+            ans.push_back(num2);
+        return ans;
+        
+    }
+};
+************************238. Product of Array Except Self**************************
+Given an array of n integers where n > 1, nums, return an array output such that output[i] is equal to the product of all the elements of nums except nums[i].
+
+Solve it without division and in O(n).
+
+For example, given [1,2,3,4], return [24,12,8,6].
+class Solution {
+public:
+    vector<int> productExceptSelf(vector<int>& nums) {
+        vector<int> left(nums.size(), 1);
+        vector<int> right(nums.size(), 1);
+        vector<int> ans;
+        //nums:[2,3,4,5]
+        //构造left right,使其：
+        //left:[1,     2,    2*3, 2*3*4]
+        //rigt:[3*4*5, 4*5,  5,   1]
+        for (int i = 1; i < nums.size(); i++)
+            left[i] = left[i-1]*nums[i-1];
+        
+        for (int i = nums.size() -2; i>=0; i--)
+            right[i] = right[i+1]*nums[i+1];
+            
+        for (int i = 0; i < nums.size(); i++)
+            ans.push_back(left[i]*right[i]);
+        
+        return ans;
+    }
+};
+************************268. Missing Number**************************
+Given an array containing n distinct numbers taken from 0, 1, 2, ..., n, find the one that is missing from the array.
+
+For example,
+Given nums = [0, 1, 3] return 2.
+class Solution {
+public:
+    int missingNumber(vector<int>& nums) {
+        int res = 0;
+        for (int i = 0; i < nums.size(); i++)
+        {
+            res ^= ((i+1)^ nums[i]);
+        }
+        return res;
+    }
+};
+***********************283. Move Zeroes***************************
+Given an array nums, write a function to move all 0's to the end of it while maintaining the relative order of the non-zero elements.
+
+For example, given nums = [0, 1, 0, 3, 12], after calling your function, nums should be [1, 3, 12, 0, 0].
+class Solution {
+public:
+    void moveZeroes(vector<int>& nums) {
+        int j = 0;
+        // 遍历数组，把非零元素依次移动到nums前面
+        for (int i = 0; i < nums.size(); i++) {
+            if (nums[i] != 0) {
+                nums[j++] = nums[i];
+            }
+        }
+		//后面的用零补齐
+        for (;j < nums.size(); j++) {
+            nums[j] = 0;
+        }
+    }
+};
+***********************287. Find the Duplicate Number***************************
+Given an array nums containing n + 1 integers where each integer is between 1 and n (inclusive), 
+prove that at least one duplicate number must exist. Assume that there is only one duplicate number, find the duplicate one.
+class Solution {
+public:
+    int findDuplicate(vector<int>& nums) {
+        //http://keithschwarz.com/interesting/code/?dir=find-duplicate
+        if (nums.size() > 1)
+    	{
+    		int slow = nums[0];
+    		int fast = nums[nums[0]];
+    		while (slow != fast)
+    		{
+    			slow = nums[slow];
+    			fast = nums[nums[fast]];
+    		//	cout << slow << " " << fast << endl;
+    		}
+
+            cout << endl;
+    		fast = 0;
+    		while (fast != slow)
+    		{
+    			fast = nums[fast];
+    			slow = nums[slow];
+    		//	cout << slow << ":" << fast << endl;
+    		}
+    		return slow;
+    	}
+    	return -1;
+    }
+};
+**************************************************
+According to the Wikipedia's article: "The Game of Life, also known simply as Life, 
+is a cellular automaton devised by the British mathematician John Horton Conway in 1970."
+
+Given a board with m by n cells, each cell has an initial state live (1) or dead (0). 
+Each cell interacts with its eight neighbors (horizontal, vertical, diagonal) using the following four rules (taken from the above Wikipedia article):
+
+Any live cell with fewer than two live neighbors dies, as if caused by under-population.
+Any live cell with two or three live neighbors lives on to the next generation.
+Any live cell with more than three live neighbors dies, as if by over-population..
+Any dead cell with exactly three live neighbors becomes a live cell, as if by reproduction.
+Write a function to compute the next state (after one update) of the board given its current state.
+//////////////////////
+To solve it in place, we use 2 bits to store 2 states:
+
+[2nd bit, 1st bit] = [next state, current state]
+
+- 00  dead (next) <- dead (current)
+- 01  dead (next) <- live (current)  
+- 10  live (next) <- dead (current)  
+- 11  live (next) <- live (current) 
+
+To get the current state, simply do
+board[i][j] & 1
+To get the next state, simply do
+board[i][j] >> 1
+
+public void gameOfLife(int[][] board) {
+    if (board == null || board.length == 0) return;
+    int m = board.length, n = board[0].length;
+
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            int lives = liveNeighbors(board, m, n, i, j);
+
+            // In the beginning, every 2nd bit is 0;
+            // So we only need to care about when will the 2nd bit become 1.
+            if (board[i][j] == 1 && lives >= 2 && lives <= 3) { 
+                board[i][j] = 3; // Make the 2nd bit 1: 01 ---> 11
+            }
+            if (board[i][j] == 0 && lives == 3) {
+                board[i][j] = 2; // Make the 2nd bit 1: 00 ---> 10
+            }
+        }
+    }
+
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            board[i][j] >>= 1;  // Get the 2nd state.
+        }
+    }
+}
+//计算(i, j)点的周围的live邻居总数，并返回
+public int liveNeighbors(int[][] board, int m, int n, int i, int j) {
+    int lives = 0;
+	//如何处理边界问题？？ 现在的坐标是(i, j), 则其周边的坐标(min(i-1,0), min(i+1, m-1)), (min(j-1, 0), min(j+1, n-1)); 
+    for (int x = Math.max(i - 1, 0); x <= Math.min(i + 1, m - 1); x++) {
+        for (int y = Math.max(j - 1, 0); y <= Math.min(j + 1, n - 1); y++) {
+            lives += board[x][y] & 1;
+        }
+    }
+    lives -= board[i][j] & 1;
+    return lives;
+}
+***********************414. Third Maximum Number***************************
+Given a non-empty array of integers, return the third maximum number in this array. 
+If it does not exist, return the maximum number. The time complexity must be in O(n).
+class Solution {
+public:
+    int thirdMax(vector<int>& nums) {
+        set<int> top3;
+        for(int i : nums){
+            top3.insert(i);
+            if(top3.size() >3)
+                top3.erase(top3.begin());
+        }
+        return top3.size() == 3? *top3.begin():*top3.rbegin(); //如果size()==3说明第三大的元素存在，故返回第一个，反之，返回最后一个（max）
+    }
+};
+***********************442. Find All Duplicates in an Array***************************
+Given an array of integers, 1 ≤ a[i] ≤ n (n = size of array), some elements appear twice and others appear once.
+
+Find all the elements that appear twice in this array.
+
+Could you do it without extra space and in O(n) runtime?
+
+Example:
+Input:
+[4,3,2,7,8,2,3,1]
+
+Output:
+[2,3]
+//method 1
+class Solution {
+public:
+    vector<int> findDuplicates(vector<int>& nums) {
+        vector<int> res;
+        int i = 0;		
+        while (i < nums.size()) {
+            if (nums[i] != nums[nums[i]-1]) 
+				swap(nums[i], nums[nums[i]-1]);
+            else i++;
+        }
+        for (i = 0; i < nums.size(); i++) {
+            if (nums[i] != i + 1) 
+				res.push_back(nums[i]);
+        }
+        return res;
+    }
+};
+//method 2
+class Solution {
+public:
+    vector<int> findDuplicates(vector<int>& nums) {
+        vector<int> res;
+        for(int i = 0; i < nums.size(); i++){
+            int idx = abs(nums[i])  - 1;
+            if(nums[idx] < 0)
+                res.push_back(idx+1);
+
+            nums[idx] = - nums[idx];
+
+        }
+        return res;
+    }
+};
+***********************448. Find All Numbers Disappeared in an Array***************************
+Given an array of integers where 1 ≤ a[i] ≤ n (n = size of array), some elements appear twice and others appear once.
+Find all the elements of [1, n] inclusive that do not appear in this array.
+Could you do it without extra space and in O(n) runtime? You may assume the returned list does not count as extra space.
+
+Example:
+Input:
+[4,3,2,7,8,2,3,1]
+Output:
+[5,6]
+class Solution {
+public:
+    //第一遍：遍历元素，设置nums[nums[i]-1]为负数
+    //第二遍，不是零的位置没有出现过
+    // [2,1,3,2]
+    // [2,1,-3,2] =>[2,-1,-3,2] =>[2,-1,-3,-2] =>[2,-1,-3,-2]
+    //  可知零号元素没有出现过
+    vector<int> findDisappearedNumbers(vector<int>& nums) {
+        for(auto it = nums.begin(); it != nums.end(); it++){
+            int idx = abs(*it) - 1;
+            if(nums[idx] > 0)
+               nums[idx] = -nums[idx];
+        }
+        vector<int> res;
+        for(int i =0; i < nums.size(); i++){
+            if(nums[i] > 0)
+                res.push_back(i+1);
+        }
+        return res;
+    }
+};
+*********************485. Max Consecutive Ones*****************************
+Given a binary array, find the maximum number of consecutive 1s in this array.
+
+Example 1:
+Input: [1,1,0,1,1,1]
+Output: 3
+Explanation: The first two digits or the last three digits are consecutive 1s.
+    The maximum number of consecutive 1s is 3.
+Note:
+
+The input array will only contain 0 and 1.
+The length of input array is a positive integer and will not exceed 10,000
+class Solution {
+public:
+    int findMaxConsecutiveOnes(vector<int>& nums) {
+        int res = 0;
+        int cnt = 0;
+        nums.push_back(0);
+        for(int i =0; i < nums.size(); i++){
+            if(nums[i] == 1)
+                cnt++;
+            else{
+                res = max(res, cnt);
+                cnt = 0;
+            }
+        }
+        return res;
+    }
+};
+**************************************************
+**************************************************
+**************************************************
+**************************************************
+**************************************************
+
+
+
+
+
