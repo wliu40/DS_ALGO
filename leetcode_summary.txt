@@ -1,0 +1,51 @@
+top interview question classification:
+level: 0 简单,很容易理解，容易acc
+
+344, 136
+
+
+level:1 初级，容易出错
+
+1
+correct:
+for idx, val in enumerate(nums):
+	if target - val in dic:
+		return [dic[target-val], idx]
+	dic[idx] = val
+	
+mistake:
+for idx, val in enumerate(nums): ## wrong case:[3,3], 6
+	dic[idx] = val
+	if target - val in dic:
+		return [dic[target-val], idx]
+2:
+correct:
+dummy_head = tmp = ListNode(0)
+while ...:
+	...
+	tmp.next = ListNode((num1+num2+carry)%10)
+	..
+	tmp = tmp.next
+mistake:
+dummy_head = tmp = ListNode(0)
+dummy_head.next = tmp
+while ...:
+	...
+	tmp = ListNode((num1+num2+carry)%10)
+	..
+	tmp = tmp.next
+level:2 中级，需要技巧
+
+371 : 同样code,在c++中可行，在python中Time limite exceed, case: -1, 1
+int sum = a^b, carry = (a&b)<<1;
+while(carry){
+	int tmp = sum;
+	sum ^= carry;
+	carry = (carry&tmp)<<1;
+}
+return sum;
+
+
+level:3 复杂，难理解
+
+4

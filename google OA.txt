@@ -1,0 +1,83 @@
+now = "15:05"
+
+def timer(time):
+    mins = int(time[-2:])
+    hour = int(time[:2])
+    mins += 1
+    time_set = set(time[-2:]).union(set(time[:2]))
+    print time_set    
+    while (mins != int(time[-2:]) or hour != int(time[:2])):                
+        if(mins == 60):
+            mins = 0
+            hour += 1
+        if hour == 24:
+            hour = 0
+        
+        if hour < 10:
+            str_hour = '0'+str(hour)
+        else:
+            str_hour = str(hour)
+        if mins < 10:
+            str_mins = '0'+str(mins)
+        else:
+            str_mins = str(mins)
+        mins += 1
+        
+        cur_time =  str_hour + ":" + str_mins
+        
+        st = set()
+        st = set(str_hour).union(set(str_mins))
+        
+        if st.issubset(time_set):
+            return cur_time
+
+    return "-1"
+
+print timer(now)      
+
+
+///////////////////////////////////////////////////////////////////
+#include <iostream>
+#include <vector> 
+#include <iterator>
+#include <set>
+using namespace std;
+
+int fun(vector<int> &v, int k){
+	if(v.empty()) 
+		return -1;
+	set<int> st;
+	st.insert(v[0]);
+	int prev_num, post_num;
+	for(int i = 1; i < v.size(); i++) {
+		st.insert(v[i]);
+		auto it = st.find(v[i]);
+		if(it == st.begin()){
+			post_num = *next(it) - *it;
+			cout << "post_num: " << post_num << endl;
+			if(post_num == k)
+				return i;
+			continue;
+		}
+		if(next(it) == st.end()){
+			prev_num = *it - *prev(it);
+			cout << "prev_num: " << prev_num << endl;
+			if(prev_num == k)
+				return i;
+			continue;
+		}
+		post_num = *next(it) - *it;
+		prev_num = *it - *prev(it);
+		cout << prev_num << ", " << post_num << endl;
+		if(post_num == k || prev_num == k)
+			return i;
+	}
+}
+
+
+int main(){
+	vector<int> v = {0, 5, 3, 9, 12, 11};
+	fun(v, 4);
+	
+
+}

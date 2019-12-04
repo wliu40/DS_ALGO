@@ -1,0 +1,62 @@
+#如果有重复，不一定能返回第一次出现的位置
+def binanry_search(nums, target):
+    l, r = 0, len(nums)-1
+    while l <= r:
+        mid = l + (r-l)/2
+        if nums[mid] == target:
+            return mid
+        elif nums[mid] < target:
+            l = mid+1
+        else:
+            r = mid-1
+    return -1
+##############################################################
+#find insert position in a array
+#if the target exist in arr, return its first index
+def find_insert_pos(nums, target):
+    l, r = 0, len(nums)
+    while l < r:
+        mid = l + (r-l)/2
+        if nums[mid] < target:
+            l = mid + 1
+        else:
+            r = mid
+    return l
+##############################################################
+#find the min in rotated arr
+def find_min_rotate_arr(nums):    
+    l, r = 0, len(nums)-1
+    if nums[l] < nums[r]:
+        return nums[l]
+    while l+1 < r:
+        mid = l+(r-l)/2
+        if nums[mid] > nums[l]:
+            l = mid
+        else:
+            r = mid
+    return nums[r]
+##############################################################
+#find the min in a rotated arr, duplicated num exists
+def find_min_rotate_arr_dup(nums):
+    l, r = 0, len(nums)-1
+    if nums[l] < nums[r]:
+        return nums[l]
+    while l+1 < r:
+        mid = l + (r-l)/2
+        if nums[l] < nums[mid]:
+            if nums[mid] <= nums[r]:
+                return nums[l]
+            l = mid
+        elif nums[l] > nums[mid]:
+            r = mid
+        else:
+            l += 1
+    return nums[r]
+##############################################################
+arr = [0,1,3,5,6,6,7,9]
+print binanry_search(arr, 6)
+print
+print find_insert_pos(arr, -100)
+print find_insert_pos(arr, 100)
+print find_insert_pos(arr, 2)
+print find_insert_pos(arr, 6)

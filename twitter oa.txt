@@ -1,0 +1,90 @@
+
+stream = "2015-08, 2016-04\n\n\
+2015-08-15, clicks, 635\n\
+2016-03-24, app_installs, 683\n\
+2015-04-05, favorites, 763\n\
+2016-01-22, favorites, 788\n\
+2015-12-05, clicks, 525\n\
+2016-06-03, retweets, 101\n\
+2015-12-02, app_installs, 982\n\
+2016-09-17, app_installs, 770\n\
+2015-11-07, impressions, 245\n\
+2016-10-16, impressions, 567"
+
+
+def aggregation(stream):
+    start, end = stream[:16].split(", ")
+    #print start, end
+    mp = dict()    
+    for line in stream[18:].split("\n"): 
+        time, action, num = line.split(', ')
+        if time < start or time > end:
+            continue
+        time = time[:7]
+        num = int(num)
+        #print "##", time, action, num
+        if time not in mp:
+            mp[time] = {action:num}
+        else:
+            if action not in mp[time]:
+                mp[time][action] = num
+            else:
+                mp[time][action] += num
+    res = ""            
+    for k,v in mp.items():
+        res += str(k) + ", "
+        for kk,vv in v.items():
+            res += str(kk) + ", " + str(vv)
+        res += '\n'
+
+    return res 
+        
+print aggregation(stream)
+
+
+from collections import defaultdict
+follow = [(1,2),(1,3),(2,3)]
+like = [(1, 't1'), (2, 't0'), (1, "t2"), (3, "t1")]
+targetuser = 1
+shreshold = 1
+
+def foo(follow, like, targetuser, shreshold):
+    #find the users what the targetUser follows
+    followed = set()
+    for u1, u2 in follow:
+        if u1 == targetuser:
+            followed.add(u2)
+    #caculate the twittes liked by each user in follows
+    dic = defaultdict(int)
+    for u, t in like:
+        if u in followed:
+            dic[t] += 1
+    #pick the twitters which was liked more than shreshold times
+    res = []
+    for t,n in dic.items():
+        if n >= shreshold:
+            res.append(t)
+    res.sort()
+    return res
+   
+print foo(follow, like, targetuser, shreshold)
+
+
+/*
+Enter your query here.
+*/
+SELECT ID,"ROOT"
+    FROM TREE
+    WHERE P_ID IS NULL   
+UNION
+SELECT T1.ID,"LEAF"
+FROM TREE T1 LEFT OUTER JOIN TREE T2
+    ON T1.ID = T2.P_ID
+    WHERE T2.P_ID IS NULL
+UNION
+SELECT DISTINCT T1.ID,"INNER"
+FROM TREE T1 INNER JOIN TREE T2
+    ON T1.ID = T2.P_ID
+    WHERE T1.P_ID IS NOT NULL
+
+

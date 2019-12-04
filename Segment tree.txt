@@ -1,0 +1,97 @@
+''' Segment Tree '''
+#http://codeforces.com/blog/entry/18051
+nums = [1,2,3,4,5]
+print "two tricks:"
+for i in range(6):
+    print i, i<<1, i<<1|1
+print
+print "two nodes of a nodes"
+for i in range(6):
+    print i, i^1
+print     
+class SegmentTree:    
+    def __init__(self, nums):              
+        self.tree = self.build(nums)
+    #build a segment tree from a list    
+    def build(self, nums):
+        N = len(nums)
+        tree=[0]*2*N
+        tree[N:]=nums
+        for i in range(N-1,0,-1):#tree[0] is dummy
+            tree[i] = tree[i<<1]+tree[i<<1|1]
+        return tree
+    #modify tree[p] to value
+    def modify(self, p, value):
+        N = (len(self.tree)+1)/2 #array size
+        p += N
+        self.tree[p] = value
+        #p and p^1 will always give you two children node
+        #e.g., p=4,p^1=5; p=5,p^1=4
+        while p > 1:
+            self.tree[p>>1] = self.tree[p]+self.tree[p^1]
+            p >>= 1
+    #sum on interval [l,r)
+    def query(self, l, r):
+        N = (len(self.tree)+1)/2
+        l += N
+        r += N
+        res = 0
+        while l<r:
+            if l&1:
+                res += self.tree[l]
+                l+=1
+            if r&1:
+                r -=1
+                res+=self.tree[r]
+            l>>=1
+            r>>=1
+        return res
+def main():
+    nums = [1,2,3,4,5,6]
+    SGT = SegmentTree(nums)
+    print "segment tree build from ", nums
+    print SGT.tree
+    print "find sum(nums[:])"    
+    print SGT.query(0,len(nums)) # sum(nums)
+    print "find sum(nums[0:3])"
+    print SGT.query(0,3) #1+2+3
+    print "modify nums[0] to 3"
+    SGT.modify(0,3) #change nums[0] = 3
+    print "new segment tree will be updated accordingly"
+    print SGT.tree #this will effect all the parent nodes
+main()
+---------------------------
+output:    
+two tricks:
+0 0 1
+1 2 3
+2 4 5
+3 6 7
+4 8 9
+5 10 11
+
+two nodes of a nodes
+0 1
+1 0
+2 3
+3 2
+4 5
+5 4
+
+segment tree build from  [1, 2, 3, 4, 5, 6]
+[0, 21, 18, 3, 7, 11, 1, 2, 3, 4, 5, 6]
+find sum(nums[:])
+21
+find sum(nums[0:3])
+6
+modify nums[0] to 3
+new segment tree will be updated accordingly
+[0, 23, 18, 5, 7, 11, 3, 2, 3, 4, 5, 6]        
+        
+        
+        
+        
+        
+        
+        
+        
